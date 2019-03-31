@@ -1,0 +1,53 @@
+<html xmlns="http://www.w3.org/1999/html">
+<body>
+<div id="citybikes">
+    <div id="stations" >
+        <h1>Bysykler i Oslo</h1>
+        <div v-for="station in stations">
+            <p name="station">
+            <div><b>Id:</b> {{ station.station_id }}</div>
+            <div><b>Navn:</b> {{ station.name }}</div>
+            <div><b>Kapasitet:</b> {{station.capacity }}</div>
+            <div><b>Tilgjengelig:</b> {{ station.num_bikes_available }} sykler og {{station.num_docks_available}} låser </div>
+            </p>
+        </div>
+    </div>
+</div>
+<script src="https://unpkg.com/vue"></script>
+<script>
+    Vue.component('station-list', {
+        props: ['stations'],
+    });
+
+    app = new Vue({
+        el: '#citybikes',
+        data: {
+            stations: []
+        },
+        mounted() {
+            const stations = requestStationsData('https://gbfs.urbansharing.com/oslobysykkel.no/station_information.json')
+            const availability = requestStationsData('https://gbfs.urbansharing.com/oslobysykkel.no/station_status.json')
+
+            stations.forEach(station => {
+                const stationAvailability = availability.find(availabe => availabe.station_id === station.station_id)
+                station.num_docks_available = stationAvailability.num_docks_available
+                station.num_bikes_available = stationAvailability.num_bikes_available
+            })
+            this.stations = stations.sort((a, b) => a.name.localeCompare(b.name))
+        }
+    });
+
+
+    function requestStationsData(url) {
+        const request = new XMLHttpRequest();
+        request.open('GET', url, false);
+        request.send(null);
+
+        if (request.status === 200) {
+            return JSON.parse(request.responseText).data.stations
+        }
+    }
+
+</script>
+</body>
+</html>
